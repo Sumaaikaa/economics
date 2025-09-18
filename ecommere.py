@@ -6,7 +6,7 @@ st.title("Economic Data Analysis")
 Ufile = st.file_uploader("Upload your file here", type = ["xlsx", "xls"])
 
 if Ufile : 
-    df = pd.read_excel(Ufile)
+    df = pd.read_excel(Ufile,engine="openpyxl")
     st.subheader("Data")
     st.write(df.head(5))
 
@@ -34,5 +34,6 @@ if Ufile :
         ax.set_ylabel("Count")
         ax.set_xlabel(column)
         st.pyplot(fig)
+
 
         

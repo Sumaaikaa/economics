@@ -24,12 +24,15 @@ if Ufile :
         df[column].hist(ax=ax, bins=20)
         ax.set_title(f"Histogram of {column}")
         st.pyplot(fig)
-         if df[column] == "order_date":
-         pd['order_date'] = pd.to_datetime(df["order_date"])
-         df["order_date"] = pd.to_datetime(df["order_date"])
-         monthly_orders = df.groupby(df["order_date"].dt.to_period("M"))["order_id"].count().reset_index()
-         monthly_orders["order_date"] = monthly_orders["order_date"].dt.to_timestamp()
-         st.line_chart(monthly_orders.set_index("order_date"))
+     elif column == "order_date":
+        df["order_date"] = pd.to_datetime(df["order_date"])
+        monthly_orders = (
+            df.groupby(df["order_date"].dt.to_period("M"))["order_id"]
+            .count()
+            .reset_index()
+        )
+        monthly_orders["order_date"] = monthly_orders["order_date"].dt.to_timestamp()
+        st.line_chart(monthly_orders.set_index("order_date"))
     else: 
         st.write(f"Summary of {column}:")
         st.write(df[column].value_counts())
@@ -43,4 +46,5 @@ if Ufile :
 
 
         
+
 

@@ -1,51 +1,69 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.express as px
 
-st.title("Economic Data Analysis")
-Ufile = st.file_uploader("Upload your file here", type = ["xlsx", "xls"])
+st.title(" E-commerce Data Analysis")
 
-if Ufile : 
-    df = pd.read_excel(Ufile,engine="openpyxl")
-    st.subheader("Data")
-    st.write(df.head(5))
 
-    st.subheader("Summary statistics")
+uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx", "xls"])
+
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    
+    st.subheader(" Head of the Data")
+    st.write(df.head())
+
+    st.subheader("Summary Statistics")
     st.write(df.describe())
 
-    st.subheader("Column-wise Analysis")
-    column = st.selectbox("Select a column for analysis", df.columns)
+    st.subheader("Columns in Data")
+    st.write(df.columns.tolist())
 
-    if pd.api.types.is_numeric_dtype(df[column]):
-        st.write(f"Summary of {column}:")
-        st.write(df[column].describe())
-        st.write(df[column].mean())
-        fig, ax = plt.subplots()
-        df[column].hist(ax=ax, bins=20)
-        ax.set_title(f"Histogram of {column}")
-        st.pyplot(fig)
-    elif column == "order_date":
-        df["order_date"] = pd.to_datetime(df["order_date"])
+    if "order_date" in df.columns:
+        df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
+        st.success(" Converted `order_date` to datetime")
+
+    if "region" in df.columns and "order_id" in df.columns:
+        gr = df.groupby("region")["order_id"].count()
+        st.subheader("Orders by Region")
+        st.write(gr)
+
+        fig = px.bar(gr, x=gr.index, y=gr.values, title="Orders Count by Region", labels={"x": "Region", "y": "Orders"})
+        st.plotly_chart(fig)
+
+    if "price" in df.columns:
+        topmon = df.groupby("region")["price"].count()
+        st.subheader("Transactions (Price Count) by Region")
+        st.write(topmon)
+
+        fig = px.pie(names=topmon.index, values=topmon.values, title="Price Count Distribution by Region")
+        st.plotly_chart(fig)
+
+    if "customer_id" in df.columns:
+        topcus_id = df.groupby(["region", "customer_id"])["order_id"].count().reset_index()
+        topcus_id = topcus_id.sort_values(by="order_id", ascending=False).head(10)
+        st.subheader("Top 10 Customers by Region")
+        st.write(topcus_id)
+
+        fig = px.bar(topcus_id, x="customer_id", y="order_id", color="region", title="Top Customers by Orders")
+        st.plotly_chart(fig)
+
+    if "order_date" in df.columns and "order_id" in df.columns:
+        st.subheader("Orders Over Time")
         monthly_orders = (
-            df.groupby(df["order_date"].dt.to_period("M"))["order_id"]
-            .count()
-            .reset_index()
+            df.groupby(df["order_date"].dt.to_period("M"))["order_id"].count().reset_index()
         )
         monthly_orders["order_date"] = monthly_orders["order_date"].dt.to_timestamp()
-        st.line_chart(monthly_orders.set_index("order_date"))
-    else: 
-        st.write(f"Summary of {column}:")
-        st.write(df[column].value_counts())
 
+        fig = px.line(monthly_orders, x="order_date", y="order_id", markers=True, title="Monthly Orders Trend")
+        st.plotly_chart(fig)
+
+    if "price" in df.columns:
+        st.subheader("Price Distribution")
         fig, ax = plt.subplots()
-        df[column].value_counts().plot(kind="bar", ax=ax)
-        ax.set_title(f"Bar Chart of {column}")
-        ax.set_ylabel("Count")
-        ax.set_xlabel(column)
+        df["price"].hist(ax=ax, bins=30, edgecolor="black")
+        ax.set_title("Price Distribution")
+        ax.set_xlabel("Price")
+        ax.set_ylabel("Frequency")
         st.pyplot(fig)
-
-
-        
-
-
-
